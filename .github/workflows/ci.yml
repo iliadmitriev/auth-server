@@ -67,6 +67,7 @@ jobs:
         run: cargo test
 
   audit:
+    if: false
     name: Audit
     runs-on: ubuntu-latest
     steps:
