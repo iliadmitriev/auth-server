@@ -2,6 +2,7 @@ use axum::{
     Router,
     routing::{get, post},
 };
+use axum_prometheus::PrometheusMetricLayer;
 use sqlx::PgPool;
 
 mod cache;
@@ -35,6 +36,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         settings.server.port
     );
 
+    let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
+
     let db_pool = db::init_pool(&settings.database).await?;
 
     let redis_client = cache::init_client(&settings.redis)
@@ -55,7 +58,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/signin", post(handlers::auth::sign_in))
         .route("/refresh", post(handlers::auth::refresh_token))
         .route("/signout", post(handlers::auth::sign_out))
+        .route("/metrics", get(|| async move { metric_handle.render() }))
         .with_state(shared_state)
+        .layer(prometheus_layer)
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
     let addr = format!("{}:{}", settings.server.host, settings.server.port);

@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 argon2 = { version = "0.5.3", features = ["std", "password-hash"] }
 axum = "0.8.9"
+axum-prometheus = "0.10.0"
 axum-server = { version = "0.8.0", features = ["tls-rustls"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 dotenvy = "0.15.7"
