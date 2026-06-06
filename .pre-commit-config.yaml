@@ -25,6 +25,21 @@ repos:
         types: [rust]
         pass_filenames: false
 
+      - id: cargo-test
+        name: cargo test
+        entry: cargo test
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-llvm-cov
+        name: cargo llvm-cov (>= 50% coverage)
+        entry: cargo llvm-cov --fail-under-lines 50 --summary-only
+        language: system
+        types: [rust]
+        pass_filenames: false
+        stages: [pre-push]
+
       - id: sqruff
         name: sqruff
         entry: sqruff lint

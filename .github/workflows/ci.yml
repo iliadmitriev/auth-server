@@ -60,11 +60,19 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov
+
       - name: Run tests
         run: cargo test
+
+      - name: Check coverage (>= 50%)
+        run: cargo llvm-cov --fail-under-lines 50 --summary-only
 
   audit:
     if: false

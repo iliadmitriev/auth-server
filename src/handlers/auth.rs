@@ -214,3 +214,80 @@ pub async fn sign_out(
 
     Ok(StatusCode::OK)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use validator::Validate;
+
+    fn valid_sign_up() -> SignUpRequest {
+        SignUpRequest {
+            email: "user@example.com".to_string(),
+            password: "secure123".to_string(),
+        }
+    }
+
+    fn valid_sign_in() -> SignInRequest {
+        SignInRequest {
+            email: "user@example.com".to_string(),
+            password: "secure123".to_string(),
+        }
+    }
+
+    // --- SignUpRequest validation ---
+
+    #[test]
+    fn sign_up_valid_request_passes() {
+        let req = valid_sign_up();
+        assert!(req.validate().is_ok());
+    }
+
+    #[test]
+    fn sign_up_invalid_email_fails() {
+        let req = SignUpRequest {
+            email: "not-an-email".to_string(),
+            password: "secure123".to_string(),
+        };
+        let errs = req.validate().unwrap_err();
+        assert!(errs.field_errors().contains_key("email"));
+    }
+
+    #[test]
+    fn sign_up_password_too_short_fails() {
+        let req = SignUpRequest {
+            email: "user@example.com".to_string(),
+            password: "abc".to_string(),
+        };
+        let errs = req.validate().unwrap_err();
+        assert!(errs.field_errors().contains_key("password"));
+    }
+
+    #[test]
+    fn sign_up_multiple_validation_errors_report_both() {
+        let req = SignUpRequest {
+            email: "bad".to_string(),
+            password: "ab".to_string(),
+        };
+        let errs = req.validate().unwrap_err();
+        assert!(errs.field_errors().contains_key("email"));
+        assert!(errs.field_errors().contains_key("password"));
+    }
+
+    // --- SignInRequest validation ---
+
+    #[test]
+    fn sign_in_valid_request_passes() {
+        let req = valid_sign_in();
+        assert!(req.validate().is_ok());
+    }
+
+    #[test]
+    fn sign_in_invalid_email_fails() {
+        let req = SignInRequest {
+            email: "invalid".to_string(),
+            password: "secure123".to_string(),
+        };
+        let errs = req.validate().unwrap_err();
+        assert!(errs.field_errors().contains_key("email"));
+    }
+}

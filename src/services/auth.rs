@@ -30,3 +30,51 @@ pub fn verify_password(password: &str, hash: &str) -> bool {
 pub fn generate_verification_token() -> String {
     Uuid::new_v4().to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hash_password_returns_valid_argon2_hash() {
+        let hash = hash_password("securepassword123").unwrap();
+        assert!(hash.starts_with("$argon2"));
+    }
+
+    #[test]
+    fn verify_password_returns_true_for_correct_password() {
+        let hash = hash_password("mysecret").unwrap();
+        assert!(verify_password("mysecret", &hash));
+    }
+
+    #[test]
+    fn verify_password_returns_false_for_wrong_password() {
+        let hash = hash_password("mysecret").unwrap();
+        assert!(!verify_password("wrongpassword", &hash));
+    }
+
+    #[test]
+    fn verify_password_returns_false_for_malformed_hash() {
+        assert!(!verify_password("any", "not-a-valid-hash"));
+    }
+
+    #[test]
+    fn verify_password_returns_false_for_empty_password() {
+        let hash = hash_password("mysecret").unwrap();
+        assert!(!verify_password("", &hash));
+    }
+
+    #[test]
+    fn generate_verification_token_returns_valid_uuid_v4() {
+        let token = generate_verification_token();
+        let parsed = Uuid::parse_str(&token);
+        assert!(parsed.is_ok());
+    }
+
+    #[test]
+    fn generate_verification_tokens_are_unique() {
+        let t1 = generate_verification_token();
+        let t2 = generate_verification_token();
+        assert_ne!(t1, t2);
+    }
+}
