@@ -47,3 +47,27 @@ pub async fn create_user(
         Err(e) => Err(CreateUserError::DatabaseError(e)),
     }
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum GetUserError {
+    #[error("User not found")]
+    UserNotFound,
+
+    #[error("Database error: {0}")]
+    DatabaseError(#[from] sqlx::Error),
+}
+
+pub async fn get_user_by_email(pool: &PgPool, email: &str) -> Result<User, GetUserError> {
+    let user = sqlx::query_as::<_, User>(
+        r#"
+        SELECT id, email, password_hash, is_verified, created_at
+        FROM users
+        WHERE email = $1
+        "#,
+    )
+    .bind(email)
+    .fetch_optional(pool)
+    .await?;
+
+    user.ok_or(GetUserError::UserNotFound)
+}

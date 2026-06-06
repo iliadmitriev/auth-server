@@ -5,6 +5,7 @@ use axum::{
 use sqlx::PgPool;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+mod cache;
 mod config;
 mod db;
 mod error;
@@ -14,6 +15,10 @@ mod services;
 #[derive(Clone)]
 struct AppState {
     pub db: PgPool,
+    pub redis: redis::aio::ConnectionManager,
+    pub jwt_secret: String,
+    pub jwt_access_duration_minutes: u64,
+    pub jwt_refresh_duration_days: u64,
 }
 
 #[tokio::main]
@@ -36,11 +41,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let db_pool = db::init_pool(&settings.database).await?;
 
-    let shared_state = AppState { db: db_pool };
+    let redis_client = cache::init_client(&settings.redis)
+        .await
+        .expect("Failed to connect to Redis");
+
+    let shared_state = AppState {
+        db: db_pool,
+        redis: redis_client,
+        jwt_secret: settings.jwt.secret,
+        jwt_access_duration_minutes: settings.jwt.access_token_duration_minutes,
+        jwt_refresh_duration_days: settings.jwt.refresh_token_duration_days,
+    };
 
     let app = Router::new()
         .route("/health", get(handlers::health::health_check))
         .route("/signup", post(handlers::auth::sign_up))
+        .route("/signin", post(handlers::auth::sign_in))
         .with_state(shared_state)
         .layer(tower_http::trace::TraceLayer::new_for_http());
 

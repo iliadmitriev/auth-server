@@ -19,6 +19,12 @@ pub enum AppError {
 
     #[error("Validation error: {0}")]
     ValidationError(String),
+
+    #[error("Redis error")]
+    Redis(#[from] redis::RedisError),
+
+    #[error("Jwt Error")]
+    Jwt(#[from] jsonwebtoken::errors::Error),
 }
 
 impl IntoResponse for AppError {
@@ -30,6 +36,8 @@ impl IntoResponse for AppError {
                 (StatusCode::INTERNAL_SERVER_ERROR, "password hashing failed")
             }
             AppError::ValidationError(_) => (StatusCode::BAD_REQUEST, "validation error"),
+            AppError::Redis(_) => (StatusCode::INTERNAL_SERVER_ERROR, "session storage error"),
+            AppError::Jwt(_) => (StatusCode::INTERNAL_SERVER_ERROR, "token generation error"),
         };
 
         let body = Json(json!({
