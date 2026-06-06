@@ -1,0 +1,21 @@
+server:
+  host: "127.0.0.1"
+  port: 8080
+  # mtls_ca_cert: certs/ca.crt
+
+database:
+  url: "postgres://auth:secret@localhost:5432/auth"
+  max_connections: 5
+
+redis:
+  url: "redis://localhost:6379/0"
+
+jwt:
+  secret: "secret"
+  access_token_duration_minutes: 15
+  refresh_token_duration_days: 7
+
+smtp:
+  host: 127.0.0.1
+  port: 1025
+  from: "test@example.com"
