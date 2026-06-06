@@ -1,5 +1,8 @@
+pub mod users;
+
 use crate::config::DatabaseSettings;
-use sqlx::{PgPool, postgres::PgPoolOptions};
+use sqlx::PgPool;
+use sqlx::postgres::PgPoolOptions;
 
 pub async fn init_pool(settings: &DatabaseSettings) -> Result<PgPool, sqlx::Error> {
     tracing::info!("🔄 Connecting to database...");

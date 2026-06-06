@@ -1,10 +1,15 @@
-use axum::{Router, routing::get};
+use axum::{
+    Router,
+    routing::{get, post},
+};
 use sqlx::PgPool;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod config;
 mod db;
+mod error;
 mod handlers;
+mod services;
 
 #[derive(Clone)]
 struct AppState {
@@ -35,6 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = Router::new()
         .route("/health", get(handlers::health::health_check))
+        .route("/signup", post(handlers::auth::sign_up))
         .with_state(shared_state)
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
