@@ -57,6 +57,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/health", get(handlers::health::health_check))
         .route("/signup", post(handlers::auth::sign_up))
         .route("/signin", post(handlers::auth::sign_in))
+        .route("/refresh", post(handlers::auth::refresh_token))
+        .route("/signout", post(handlers::auth::sign_out))
         .with_state(shared_state)
         .layer(tower_http::trace::TraceLayer::new_for_http());
 

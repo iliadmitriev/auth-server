@@ -15,3 +15,23 @@ pub async fn create_session(
 
     Ok(session_id)
 }
+
+pub async fn get_session_user_id(
+    mut redis: ConnectionManager,
+    session_id: &str,
+) -> Result<Option<Uuid>, redis::RedisError> {
+    let key = format!("session:{}", session_id);
+    let user_id: Option<String> = redis.get(&key).await?;
+
+    Ok(user_id.and_then(|s| Uuid::parse_str(&s).ok()))
+}
+
+pub async fn delete_session(
+    mut redis: ConnectionManager,
+    session_id: &str,
+) -> Result<(), redis::RedisError> {
+    let key = format!("session:{}", session_id);
+    let _: () = redis.del(&key).await?;
+
+    Ok(())
+}

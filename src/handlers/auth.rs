@@ -9,7 +9,7 @@ use crate::{
     services::{
         auth::{generate_verification_token, hash_password, verify_password},
         jwt::generate_access_token,
-        session::create_session,
+        session::{create_session, delete_session, get_session_user_id},
     },
 };
 
@@ -150,4 +150,67 @@ pub async fn sign_in(
             token_type: "Bearer".to_string(),
         }),
     ))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RefreshTokenRequest {
+    pub refresh_token: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RefreshTokenResponse {
+    pub access_token: String,
+    pub token_type: String,
+}
+
+pub async fn refresh_token(
+    State(state): State<AppState>,
+    Json(payload): Json<RefreshTokenRequest>,
+) -> Result<(StatusCode, Json<RefreshTokenResponse>), AppError> {
+    // check session
+    let user_id = get_session_user_id(state.redis.clone(), &payload.refresh_token)
+        .await
+        .map_err(AppError::Redis)?;
+
+    // get user_id
+    let user_id = match user_id {
+        Some(user_id) => user_id,
+        None => {
+            return Err(AppError::ValidationError(
+                "invalid or expired session".to_string(),
+            ));
+        }
+    };
+
+    // generate new access token
+    let access_token = generate_access_token(
+        user_id,
+        &state.jwt_secret,
+        state.jwt_access_duration_minutes,
+    )
+    .map_err(AppError::Jwt)?;
+
+    Ok((
+        StatusCode::OK,
+        Json(RefreshTokenResponse {
+            access_token,
+            token_type: "Bearer".to_string(),
+        }),
+    ))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SignOutRequest {
+    pub refresh_token: String,
+}
+
+pub async fn sign_out(
+    State(state): State<AppState>,
+    Json(payload): Json<SignOutRequest>,
+) -> Result<StatusCode, AppError> {
+    delete_session(state.redis.clone(), &payload.refresh_token)
+        .await
+        .map_err(AppError::Redis)?;
+
+    Ok(StatusCode::OK)
 }
