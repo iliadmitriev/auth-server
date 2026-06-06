@@ -3,13 +3,13 @@ use axum::{
     routing::{get, post},
 };
 use sqlx::PgPool;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod cache;
 mod config;
 mod db;
 mod error;
 mod handlers;
+mod logging;
 mod services;
 
 #[derive(Clone)]
@@ -25,14 +25,10 @@ struct AppState {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "info,tower_http=debug,sqlx=warn".into()),
-        ))
-        .with(tracing_subscriber::fmt::layer())
-        .init();
-
     let settings = config::load_settings().expect("❌ Failed to load configuration");
+
+    logging::init(&settings.server.log_format);
+
     tracing::info!(
         "✅ Loaded configuration for {}:{}",
         settings.server.host,

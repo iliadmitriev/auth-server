@@ -21,6 +21,8 @@ pub struct ServerSettings {
     pub port: u16,
     #[serde(default)]
     pub mtls_ca_cert: Option<String>,
+    #[serde(default = "default_log_format")]
+    pub log_format: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -58,4 +60,8 @@ pub fn load_settings() -> Result<Settings, Box<figment::Error>> {
         .merge(Env::prefixed("AUTH_SERVER__").split("__"))
         .extract()
         .map_err(Box::new)
+}
+
+fn default_log_format() -> String {
+    "pretty".to_string()
 }

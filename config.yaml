@@ -4,6 +4,7 @@ server:
   host: "127.0.0.1"
   port: 8080
   # mtls_ca_cert: certs/ca.crt
+  log_format: "pretty" # Change to "json" in production
 
 database:
   url: "postgres://auth:secret@localhost:5432/auth?application_name=auth-server"
