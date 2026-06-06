@@ -52,9 +52,10 @@ pub struct SmtpSettings {
     pub from: String,
 }
 
-pub fn get_config() -> Result<Settings, figment::Error> {
+pub fn load_settings() -> Result<Settings, Box<figment::Error>> {
     Figment::new()
         .merge(Yaml::file("config.yaml"))
         .merge(Env::prefixed("AUTH_SERVER__").split("__"))
         .extract()
+        .map_err(Box::new)
 }

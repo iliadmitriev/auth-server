@@ -1,8 +1,15 @@
 use axum::{Router, routing::get};
+use sqlx::PgPool;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod config;
+mod db;
 mod handlers;
+
+#[derive(Clone)]
+struct AppState {
+    pub db: PgPool,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -15,15 +22,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let settings = config::get_config().expect("❌ Failed to load configuration");
+    let settings = config::load_settings().expect("❌ Failed to load configuration");
     tracing::info!(
         "✅ Loaded configuration for {}:{}",
         settings.server.host,
         settings.server.port
     );
 
+    let db_pool = db::init_pool(&settings.database).await?;
+
+    let shared_state = AppState { db: db_pool };
+
     let app = Router::new()
         .route("/health", get(handlers::health::health_check))
+        .with_state(shared_state)
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
     let addr = format!("{}:{}", settings.server.host, settings.server.port);

@@ -1,11 +1,24 @@
-use axum::{Json, http::StatusCode};
+use axum::{Json, extract::State, http::StatusCode};
 use serde_json::json;
 
-pub async fn health_check() -> (StatusCode, Json<serde_json::Value>) {
+use crate::AppState;
+
+pub async fn health_check(State(state): State<AppState>) -> (StatusCode, Json<serde_json::Value>) {
+    let db_status = match sqlx::query("SELECT 1").execute(&state.db).await {
+        Ok(_) => "healthy",
+        Err(_) => "unhealthy",
+    };
+
+    let status_code = if db_status == "healthy" {
+        StatusCode::OK
+    } else {
+        StatusCode::INTERNAL_SERVER_ERROR
+    };
+
     (
-        StatusCode::OK,
+        status_code,
         Json(json!({
-            "status": "healthy",
+            "status": db_status,
             "message": "Auth server is running"
         })),
     )
